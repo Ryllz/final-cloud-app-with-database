@@ -59,7 +59,6 @@
             <input type="check" name="choice_{{choice.id}}" id="{{choice.id}}" ...>
             -->
                     <form id="questionform" action= "{% url 'onlinecourse:submit' course.id %}" method="post">
-                        asd
                             {% for question in course.question_set.all %}
                                 <div class="card mt-1">
                                     <div class="card-header"><h5>{{ question.content }}</h5></div>

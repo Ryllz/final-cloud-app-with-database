@@ -112,9 +112,11 @@ def enroll(request, course_id):
          # Redirect to show_exam_result with the submission id
 def submit(request, course_id):
     enrollment = Enrollment.objects.get(user=request.user, course=course_id)
-    Submission.objects.create(enrollment=enrollment, choices=extract_answers(request))
-
-    return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(submission.id)))
+    submission = Submission.objects.create(enrollment=enrollment)
+    for _id in extract_answers(request):
+        submission.choices.add(_id)
+    submission.save()
+    return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(course_id, submission.pk)))
 
 
 # <HINT> A example method to collect the selected choices from the exam form from the request object
@@ -139,13 +141,19 @@ def show_exam_result(request, course_id, submission_id):
     submission = get_object_or_404(Submission, pk=submission_id)
     answers = submission.choices.all()
     qns = course.question_set.all()
+    sel_id = list(answers.values_list('id', flat=True))
     max_grade = 0
     user_grade = 0
+
     for qn in qns:
         max_grade += qn.grade
         if qn.is_get_score(answers):
             user_grade += qn.grade
-    user_grade = round(user_grade/max_grade, 0)
 
-    context = {'course':course, 'grade':user_grade, 'questions':qns}
+    print('selected IDs are - ' + str(sel_id))
+    print('max grade is - ' + str(max_grade))
+    print('user grade is - ' + str(user_grade))
+    user_grade = round(user_grade/max_grade*100)
+
+    context = {'course':course, 'grade':user_grade, 'selected_ids':sel_id, 'questions':qns}
     return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
